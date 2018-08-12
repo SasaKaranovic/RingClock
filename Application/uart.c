@@ -30,7 +30,7 @@ void USART_Init(void)
     __HAL_RCC_USART1_CLK_ENABLE();
 
    /**USART1 GPIO Configuration    
-    PA9     ------> USART1_TX
+    PA9      ------> USART1_TX
     PA10     ------> USART1_RX 
     */
 

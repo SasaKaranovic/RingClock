@@ -7,12 +7,13 @@
 
 // App
 #include "sys_init.h"
+#include "clock_config.h"
 #include "clock.h"
 #include "debug.h"
 #include "rtc.h"
 
-#define refreshColor    100
-#define refreshTime     200
+#define refreshColor        50
+#define refreshDBGTime      60000
 
 // Clock variables
 uint8_t clockHours              = 0;
@@ -24,6 +25,8 @@ volatile uint32_t miliseconds   = 0;
 volatile uint32_t updateTime    = 0;
 volatile uint32_t updateLED     = 0;
 
+extern RTC_HandleTypeDef hrtc;
+
 uint8_t brightness = 0;
 
 
@@ -32,7 +35,7 @@ int main(void)
     Sys_Init();
 
     // Test
-    RTC_SetTime(1, 10, 0);
+    RTC_SetTime(3, 22, 0);
 
     debug_log("WallClock Up&Running\r\n");
 
@@ -53,8 +56,8 @@ int main(void)
         if(miliseconds >= updateTime)
         {
             RTC_ReadTime(&clockHours, &clockMinutes, &clockSeconds);
-            debug("Read back time: %02d:%02d:%02d", clockHours, clockMinutes, clockSeconds);
-            updateTime = miliseconds + refreshTime;
+            debug("Debug: %02d:%02d:%02d", clockHours, clockMinutes, clockSeconds);
+            updateTime = miliseconds + refreshDBGTime;
         }
 
         // Read Hour/Minute butons
@@ -72,11 +75,11 @@ int main(void)
                 RTC_SetTime(clockHours, clockMinutes, 0);
             }
 
-            //Software debounce
-            HAL_Delay(300);
-
             //Wait for both buttons to be released
             while(BUTTON_ReadHR() || BUTTON_ReadMIN());
+
+            //Software debounce
+            HAL_Delay(300);
         }
 
     }
@@ -87,3 +90,5 @@ void HAL_SYSTICK_Callback(void)
 {
     miliseconds++;
 }
+
+

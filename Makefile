@@ -75,5 +75,18 @@ $(EXECUTABLE): $(SRC) $(STARTUP)
 	$(CC) $(CFLAGS) $^ -lm -lc -lnosys  -o $@
 
 clean:
-	DEL /Q RingClock.hex
-	DEL /Q RingClock.elf
+ifneq ("$(wildcard $($(TARGET).elf))","")
+	del /s /q $(TARGET).elf
+else
+	@echo $(TARGET).elf missing. (did you run `make all` before?)
+endif
+
+ifneq ("$(wildcard $($(TARGET).hex))","")
+	del /s /q $(TARGET).hex
+else
+	@echo $(TARGET).hex missing. (did you run `make all` before?)
+endif
+
+
+flash:
+	ST-LINK_CLI.exe -c SWD UR -P "$(TARGET).hex" -V -HardRst

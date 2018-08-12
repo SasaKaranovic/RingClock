@@ -41,6 +41,7 @@
 
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_tim3_ch1;
+extern TIM_HandleTypeDef  htim3;
 
 /******************************************************************************/
 /*            Cortex-M3 Processor Interruption and Exception Handlers         */ 
@@ -177,6 +178,7 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 1 */
 }
 
+
 /******************************************************************************/
 /* STM32F1xx Peripheral Interrupt Handlers                                    */
 /* Add here the Interrupt Handlers for the used peripherals.                  */
@@ -194,7 +196,8 @@ void DMA1_Channel6_IRQHandler(void)
   /* USER CODE END DMA1_Channel6_IRQn 0 */
   HAL_DMA_IRQHandler(&hdma_tim3_ch1);
   /* USER CODE BEGIN DMA1_Channel6_IRQn 1 */
-
+  HAL_TIM_PWM_Stop_DMA(&htim3, TIM_CHANNEL_1);
+  HAL_DMA_IRQHandler(&hdma_tim3_ch1);
   /* USER CODE END DMA1_Channel6_IRQn 1 */
 }
 
