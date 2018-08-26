@@ -19,7 +19,7 @@ void RTC_SetTime(uint8_t hours, uint8_t minutes, uint8_t seconds)
     sTime.Minutes   = minutes;
     sTime.Seconds   = seconds;
 
-    if(status = HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN))
+    if( (status = HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) ))
     {
         debug("HAL_RTC_SetTime ERROR: 0x%02X", status);
     }
@@ -48,7 +48,7 @@ void RTC_ReadTime(uint8_t *hours, uint8_t *minutes, uint8_t *seconds)
     HAL_StatusTypeDef status;
     RTC_TimeTypeDef sTime;
 
-    if(status = HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN))
+    if( (status = HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN)) )
     {
         debug("HAL_RTC_GetTime ERROR: 0x%02X", status);
     }

@@ -12,7 +12,7 @@
 #include "debug.h"
 #include "rtc.h"
 
-#define refreshColor        50
+#define refreshColor        2000
 #define refreshDBGTime      60000
 
 // Clock variables
@@ -34,10 +34,14 @@ int main(void)
 {
     Sys_Init();
 
-    // Test
-    RTC_SetTime(3, 22, 0);
+    DebugLED_On();
+    UserLED_On();
 
     debug_log("WallClock Up&Running\r\n");
+    RTC_ReadTime(&clockHours, &clockMinutes, &clockSeconds);
+    HAL_Delay(500);
+    DebugLED_Off();
+    UserLED_Off();
 
     // Loop forever
     while (1){
@@ -45,11 +49,10 @@ int main(void)
         // Update LEDs and cycle colors
         if(miliseconds >= updateLED)
         {
-            Clock_Clear();
-            Clock_DrawHands();
-            Clock_DrawTime(clockHours, clockMinutes);
-            Clock_SendData();
+            DebugLED_On();
+            Clock_Update(clockHours, clockMinutes);
             updateLED = miliseconds + refreshColor;
+            DebugLED_Off();
         }
 
         // Read time from RTC and update local variables
@@ -63,23 +66,29 @@ int main(void)
         // Read Hour/Minute butons
         while(BUTTON_ReadHR() || BUTTON_ReadMIN())
         {
+            UserLED_On();
             //Increment hours
             if(BUTTON_ReadHR())
             {
-                clockHours++;
+                clockHours = (clockHours < 23) ? ++clockHours : 0;
                 RTC_SetTime(clockHours, clockMinutes, 0);
             }
             else if(BUTTON_ReadMIN())
             {
-                clockMinutes++;
+                clockMinutes = (clockMinutes < 59) ? ++clockMinutes : 0;
                 RTC_SetTime(clockHours, clockMinutes, 0);
             }
 
+            // Update LEDs
+            Clock_Update(clockHours, clockMinutes);
+            
             //Wait for both buttons to be released
             while(BUTTON_ReadHR() || BUTTON_ReadMIN());
 
             //Software debounce
-            HAL_Delay(300);
+            HAL_Delay(150);
+            UserLED_Off();
+
         }
 
     }

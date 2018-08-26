@@ -11,8 +11,6 @@ SZ=arm-none-eabi-size
 
 BIN=$(CP) -O ihex 
 
-
-
 DEFS = -DUSE_HAL_DRIVER -DSTM32F103xB -DHSE_VALUE=8000000
 STARTUP = startup_stm32f103xb.s
 
@@ -27,7 +25,7 @@ STM32_INCLUDES = -IApplication \
 -IDrivers/CMSIS/Device/ST/STM32F1xx/Include \
 -IDrivers/CMSIS/Include
 
-OPTIMIZE       = -Os
+OPTIMIZE       = -O2 -Wall -Wextra -Wunused-parameter
 
 CFLAGS	= $(MCFLAGS)  $(OPTIMIZE)  $(DEFS) -I. -I./ $(STM32_INCLUDES)  -Wl,-T,STM32F103C8Tx_FLASH.ld
 AFLAGS	= $(MCFLAGS) 
@@ -75,17 +73,8 @@ $(EXECUTABLE): $(SRC) $(STARTUP)
 	$(CC) $(CFLAGS) $^ -lm -lc -lnosys  -o $@
 
 clean:
-ifneq ("$(wildcard $($(TARGET).elf))","")
 	del /s /q $(TARGET).elf
-else
-	@echo $(TARGET).elf missing. (did you run `make all` before?)
-endif
-
-ifneq ("$(wildcard $($(TARGET).hex))","")
 	del /s /q $(TARGET).hex
-else
-	@echo $(TARGET).hex missing. (did you run `make all` before?)
-endif
 
 
 flash:

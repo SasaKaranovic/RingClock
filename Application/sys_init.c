@@ -72,21 +72,21 @@ void Sys_Init(void)
     HAL_GPIO_Init(GPIO_MINUTE_PORT, &GPIO_InitStructure);
 
 
-    // WS2812 DIN pin
-    GPIO_InitStructure.Pin     = GPIO_WS2812_PIN;
-    GPIO_InitStructure.Mode    = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStructure.Speed   = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(GPIO_WS2812_PORT, &GPIO_InitStructure);
-
     // Debug/activity LED
     GPIO_InitStructure.Pin     = GPIO_DBG_LED_PIN;
     GPIO_InitStructure.Mode    = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStructure.Speed   = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIO_DBG_LED_PORT, &GPIO_InitStructure);
 
+    // User LED
+    GPIO_InitStructure.Pin     = GPIO_USR_LED_PIN;
+    GPIO_InitStructure.Mode    = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStructure.Speed   = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIO_USR_LED_PORT, &GPIO_InitStructure);
 
-    HAL_GPIO_WritePin(GPIO_WS2812_PORT,  GPIO_WS2812_PIN,  GPIO_PIN_SET);
-    HAL_GPIO_WritePin(GPIO_DBG_LED_PORT, GPIO_DBG_LED_PIN, GPIO_PIN_SET);
+
+    HAL_GPIO_WritePin(GPIO_DBG_LED_PORT, GPIO_DBG_LED_PIN, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIO_USR_LED_PORT, GPIO_USR_LED_PIN, GPIO_PIN_RESET);
 
     hrtc.Instance               = RTC;
     HAL_RTC_Init(&hrtc);
@@ -101,60 +101,55 @@ void Sys_Init(void)
 static void SystemClock_Config(void)
 {
 
-    RCC_OscInitTypeDef RCC_OscInitStruct;
-    RCC_ClkInitTypeDef RCC_ClkInitStruct;
-    RCC_PeriphCLKInitTypeDef PeriphClkInit;
+  RCC_OscInitTypeDef RCC_OscInitStruct;
+  RCC_ClkInitTypeDef RCC_ClkInitStruct;
+  RCC_PeriphCLKInitTypeDef PeriphClkInit;
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_LSE;
-    RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-    RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
-    RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-    RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-    RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL7;
-    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-    {
-        _Error_Handler(__FILE__, __LINE__);
-    }
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = 16;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL14;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
-    {
-        _Error_Handler(__FILE__, __LINE__);
-    }
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
 
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
-    PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
-    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-    {
-        _Error_Handler(__FILE__, __LINE__);
-    }
-
-    /**Enables the Clock Security System 
-    */
-    HAL_RCC_EnableCSS();
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
 
     /**Configure the Systick interrupt time 
     */
-    HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
+  HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 
     /**Configure the Systick 
     */
-    HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
+  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 
-    /* SysTick_IRQn interrupt configuration */
-    HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+  /* SysTick_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
 
@@ -169,18 +164,18 @@ void RTC_Init(void)
     hrtc.Instance               = RTC;
     hrtc.Init.AsynchPrediv      = RTC_AUTO_1_SECOND;
     hrtc.Init.OutPut            = RTC_OUTPUTSOURCE_NONE;
-    if(status = HAL_RTC_Init(&hrtc))
+    if( (status = HAL_RTC_Init(&hrtc)) )
     {
         debug("HAL_RTC_Init ERROR: 0x%02X", status);
     }
 
     // Set clock to 00:00:00 if RTC is booting up for the first time
-    // if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1) != 0x32F2){
+    if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1) != 0x32F2){
         sTime.Hours     = 0;
         sTime.Minutes   = 0;
         sTime.Seconds   = 0;
 
-        if(status = HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD))
+        if( (status = HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD)) )
         {
             debug("HAL_RTC_SetTime ERROR: 0x%02X", status);
         }
@@ -190,15 +185,15 @@ void RTC_Init(void)
         DateToUpdate.Date = 0x1;
         DateToUpdate.Year = 0x0;
 
-        if(status = HAL_RTC_SetDate(&hrtc, &DateToUpdate, RTC_FORMAT_BCD))
+        if( (status = HAL_RTC_SetDate(&hrtc, &DateToUpdate, RTC_FORMAT_BCD)) )
         {
             debug("HAL_RTC_SetDate ERROR: 0x%02X", status);
         }
 
         // Set RTC flag in RTC backup register so we know RTC
         // has been initalized and is ready to be used.
-        // HAL_RTCEx_BKUPWrite(&hrtc,RTC_BKP_DR1,0x32F2);
-    // }
+        HAL_RTCEx_BKUPWrite(&hrtc,RTC_BKP_DR1,0x32F2);
+    }
 }
 
 
@@ -253,11 +248,11 @@ void Timer3_init(void)
     uint16_t PrescalerValue;
     
     __HAL_RCC_GPIOA_CLK_ENABLE();
-    /* GPIOA Configuration: TIM3 Channel 1 as alternate function push-pull */
-    GPIO_InitStructure.Pin = GPIO_PIN_6;
-    GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+    /* GPIO_WS2812_PIN Configuration: TIM3 Channel 1 as alternate function push-pull */
+    GPIO_InitStructure.Pin      = GPIO_WS2812_PIN;
+    GPIO_InitStructure.Mode     = GPIO_MODE_AF_PP;
+    GPIO_InitStructure.Speed    = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIO_WS2812_PORT, &GPIO_InitStructure);
     
     __HAL_RCC_TIM3_CLK_ENABLE();
 
@@ -314,12 +309,14 @@ void Timer3_init(void)
 
 static void _Error_Handler(char * file, int line)
 {
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  while(1) 
-  {
-  }
-  /* USER CODE END Error_Handler_Debug */ 
+    UNUSED(file);
+    UNUSED(line);
+    /* USER CODE BEGIN Error_Handler_Debug */
+    /* User can add his own implementation to report the HAL error return state */
+    while(1) 
+    {
+    }
+    /* USER CODE END Error_Handler_Debug */ 
 }
 
 #ifdef USE_FULL_ASSERT
@@ -333,10 +330,12 @@ static void _Error_Handler(char * file, int line)
    */
 void assert_failed(uint8_t* file, uint32_t line)
 {
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
+    UNUSED(file);
+    UNUSED(line);
+    /* USER CODE BEGIN 6 */
+    /* User can add his own implementation to report the file name and line number,
     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
+    /* USER CODE END 6 */
 
 }
 
