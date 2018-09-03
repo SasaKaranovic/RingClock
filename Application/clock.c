@@ -57,9 +57,9 @@ ws_led_t Color_Wheel(uint16_t count)
 {
     ws_led_t ColorWheel;
 
-    ColorWheel.RED   = (uint8_t) (sin(0.1*count + 0) * 127 + 128);
-    ColorWheel.GREEN = (uint8_t) (sin(0.1*count + 2) * 127 + 128);
-    ColorWheel.BLUE  = (uint8_t) (sin(0.1*count + 4) * 127 + 128);
+    ColorWheel.RED   = (uint8_t) (sin(0.3*count + 0) * 127 + 128);
+    ColorWheel.GREEN = (uint8_t) (sin(0.3*count + 2) * 127 + 128);
+    ColorWheel.BLUE  = (uint8_t) (sin(0.3*count + 4) * 127 + 128);
 
     return ColorWheel;
 }
