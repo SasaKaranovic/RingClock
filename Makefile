@@ -1,5 +1,5 @@
-TARGET=LaraAllTheColors
-EXECUTABLE=LaraAllTheColors.elf
+TARGET=RingClock
+EXECUTABLE=RingClock.elf
 
 CC=arm-none-eabi-gcc
 LD=arm-none-eabi-gcc
