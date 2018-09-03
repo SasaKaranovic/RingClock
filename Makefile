@@ -1,5 +1,5 @@
-TARGET=RingClock
-EXECUTABLE=RingClock.elf
+TARGET=LaraAllTheColors
+EXECUTABLE=LaraAllTheColors.elf
 
 CC=arm-none-eabi-gcc
 LD=arm-none-eabi-gcc
@@ -10,8 +10,6 @@ OD=arm-none-eabi-objdump
 SZ=arm-none-eabi-size
 
 BIN=$(CP) -O ihex 
-
-
 
 DEFS = -DUSE_HAL_DRIVER -DSTM32F103xB -DHSE_VALUE=8000000
 STARTUP = startup_stm32f103xb.s
@@ -27,7 +25,7 @@ STM32_INCLUDES = -IApplication \
 -IDrivers/CMSIS/Device/ST/STM32F1xx/Include \
 -IDrivers/CMSIS/Include
 
-OPTIMIZE       = -Os
+OPTIMIZE       = -O2 -Wall -Wextra -Wunused-parameter
 
 CFLAGS	= $(MCFLAGS)  $(OPTIMIZE)  $(DEFS) -I. -I./ $(STM32_INCLUDES)  -Wl,-T,STM32F103C8Tx_FLASH.ld
 AFLAGS	= $(MCFLAGS) 
@@ -75,5 +73,12 @@ $(EXECUTABLE): $(SRC) $(STARTUP)
 	$(CC) $(CFLAGS) $^ -lm -lc -lnosys  -o $@
 
 clean:
-	DEL /Q RingClock.hex
-	DEL /Q RingClock.elf
+	del /s /q $(TARGET).elf
+	del /s /q $(TARGET).hex
+
+
+flash:
+	ST-LINK_CLI.exe -c SWD UR -P "$(TARGET).hex" -V -HardRst
+
+jlink:
+	JLink -device STM32F103C8 -speed 4000 -if swd -autoconnect 1 -CommanderScript flash.jlink
