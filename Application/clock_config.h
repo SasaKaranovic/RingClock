@@ -4,11 +4,13 @@
 // Clock related hard-coded values
 #define LED_COUNT               60      // Number of LEDs we have 
 #define LED_OFFSET              30      // Position of 12HR LED, counting CCW from your first DIN LED
+#define LED_UPDATE_SPEED_SLOW   3000
+#define LED_UPDATE_SPEED_FAST   100
 #define DIMMING_FEATURE_ENABLED         // Comment this line to disable LED time-based dimming
 #define DIM_HOUR_TURN_ON        19      // Turn ON dim feature at 19:00
 #define DIM_HOUR_TURN_OFF       8       // Turn OFF dim feature at 08:00
-#define DIM_BRIGHTNESS_ON       200     // Dim to 30% of full intensity
-#define DIM_BRIGHTNESS_OFF      10      // Dim to 80% of full intensity
+#define DIM_LED_IS_ON           0.5
+#define DIM_LED_IS_DIM          0.07
     
 // GPIO definitions 
 #define GPIO_MINUTE_PIN         GPIO_PIN_3

@@ -79,3 +79,6 @@ clean:
 
 flash:
 	ST-LINK_CLI.exe -c SWD UR -P "$(TARGET).hex" -V -HardRst
+
+jlink:
+	JLink -device STM32F103C8 -speed 4000 -if swd -autoconnect 1 -CommanderScript flash.jlink

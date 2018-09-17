@@ -13,10 +13,12 @@ const ws_led_t COLOR_CLOCK_HOUR             = { .RED = 0xF0,        .GREEN = 0x0
 
 // Clock related variables
 volatile ws_led_t BuffClock[LED_COUNT]      = { {.RED = 0x00,       .GREEN = 0x00,         .BLUE = 0x00 } };
-uint8_t LED_Brightness                      = DIM_BRIGHTNESS_OFF;
+float LED_Brightness                        = DIM_LED_IS_ON;
 
 // Fade in-out helper variables
 volatile ws_led_t colorMinutes_current;
+static uint8_t clockPhase = 0;
+static clockMode_t clockMode = ModeSameColor;
 
 // Color fade states
 uint16_t colorFadeState = 0;
@@ -71,18 +73,15 @@ void Clock_Update(uint8_t ClockHour, uint8_t ClockMinute)
     Clock_DrawTime(ClockHour, ClockMinute);
 
     // Check if dimming is enabled and dim LEDs if needed
-    #ifdef DIMMING_FEATURE_ENABLED
     if( (ClockHour >= DIM_HOUR_TURN_ON) || (ClockHour < DIM_HOUR_TURN_OFF) )
     {
-        LED_Brightness = DIM_HOUR_TURN_OFF;
+        LED_Brightness = DIM_LED_IS_DIM;
     }
     else 
     {
-        LED_Brightness = DIM_HOUR_TURN_ON;
+        LED_Brightness = DIM_LED_IS_ON;
     }
     Clock_DimAll();
-    #endif
-
     Clock_SendData();
 }
 
@@ -106,11 +105,22 @@ void Clock_DrawTime(uint8_t ClockHour, uint8_t ClockMinute)
 
     // Get next color from our color wheel
     colorMinutes_current = Color_Wheel(colorFadeState);
-    colorFadeState = (colorFadeState < 1024) ? ++colorFadeState : 0;
+    colorFadeState = (colorFadeState < 60) ? ++colorFadeState : 0;
+    
+    clockPhase += 1;
 
     //Mark elapsed minutes with newely chosen color
     for (uint8_t i = 0; i < ClockMinute; ++i)
     {
+        if(clockMode == ModeRainbowStatic)
+        {
+            colorMinutes_current = Color_Wheel(i);
+        }
+        else if(clockMode == ModeRainbowDynamic)
+        {
+            colorMinutes_current = Color_Wheel(i+clockPhase);
+        }
+
         led = (i + LED_OFFSET) % 60;
         if( (led%5) != 0) //Don't change colors of hour markers
         {   
@@ -143,9 +153,9 @@ static void Clock_DimAll(void)
     // Not most eficient way but easy
     for(i=0; i<LED_COUNT; i++)
     {
-        BuffClock[i].RED     = (uint8_t)((BuffClock[i].RED     * LED_Brightness) >> 8);
-        BuffClock[i].GREEN   = (uint8_t)((BuffClock[i].GREEN   * LED_Brightness) >> 8);
-        BuffClock[i].BLUE    = (uint8_t)((BuffClock[i].BLUE    * LED_Brightness) >> 8);
+        BuffClock[i].RED     = (BuffClock[i].RED     * LED_Brightness);
+        BuffClock[i].GREEN   = (BuffClock[i].GREEN   * LED_Brightness);
+        BuffClock[i].BLUE    = (BuffClock[i].BLUE    * LED_Brightness);
     }
 }
 
@@ -157,4 +167,21 @@ uint8_t Clock_GetBrightness(void)
 void Clock_SetBrightness(uint8_t value)
 {
     LED_Brightness = value;
+}
+
+void Clock_SetMode(clockMode_t SetMode_t)
+{
+    if ( (SetMode_t > Mode_LAST) || (SetMode_t > Mode_LAST) )
+    {
+        debug_log("Invalid '0x%02X' mode value! \r\n", SetMode_t);
+        return;
+    }
+
+    clockMode = SetMode_t;
+}
+
+
+clockMode_t Clock_GetMode(void)
+{
+    return clockMode;
 }

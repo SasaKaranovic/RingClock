@@ -12,18 +12,18 @@
 #include "debug.h"
 #include "rtc.h"
 
-#define refreshColor        2000
-#define refreshDBGTime      60000
+#define periodReadRTC                   20000
 
 // Clock variables
-uint8_t clockHours              = 0;
-uint8_t clockMinutes            = 0;
-uint8_t clockSeconds            = 0;
+uint8_t clockHours                      = 0;
+uint8_t clockMinutes                    = 0;
+uint8_t clockSeconds                    = 0;
 
 // Various variables
-volatile uint32_t miliseconds   = 0;
-volatile uint32_t updateTime    = 0;
-volatile uint32_t updateLED     = 0;
+volatile uint32_t miliseconds           = 0;
+volatile uint32_t updateTime            = 0;
+volatile uint32_t updateLED             = 0;
+volatile uint32_t periodUpdateClock     = LED_UPDATE_SPEED_SLOW;
 
 extern RTC_HandleTypeDef hrtc;
 
@@ -38,6 +38,7 @@ int main(void)
     UserLED_On();
 
     debug_log("WallClock Up&Running\r\n");
+    // RTC_SetTime(20, 50, 0);
     RTC_ReadTime(&clockHours, &clockMinutes, &clockSeconds);
     HAL_Delay(500);
     DebugLED_Off();
@@ -51,8 +52,7 @@ int main(void)
         {
             DebugLED_On();
             Clock_Update(clockHours, clockMinutes);
-            updateLED = miliseconds + refreshColor;
-            DebugLED_Off();
+            updateLED = miliseconds + periodUpdateClock        DebugLED_Off();
         }
 
         // Read time from RTC and update local variables
@@ -60,34 +60,65 @@ int main(void)
         {
             RTC_ReadTime(&clockHours, &clockMinutes, &clockSeconds);
             debug("Debug: %02d:%02d:%02d", clockHours, clockMinutes, clockSeconds);
-            updateTime = miliseconds + refreshDBGTime;
+            updateTime = miliseconds + periodReadRTC;
         }
 
         // Read Hour/Minute butons
         while(BUTTON_ReadHR() || BUTTON_ReadMIN())
         {
+            // Wait about 200ms to detect both button pressed event. Also act as SWd debounce
             UserLED_On();
-            //Increment hours
-            if(BUTTON_ReadHR())
-            {
-                clockHours = (clockHours < 23) ? ++clockHours : 0;
-                RTC_SetTime(clockHours, clockMinutes, 0);
-            }
-            else if(BUTTON_ReadMIN())
-            {
-                clockMinutes = (clockMinutes < 59) ? ++clockMinutes : 0;
-                RTC_SetTime(clockHours, clockMinutes, 0);
-            }
-
-            // Update LEDs
-            Clock_Update(clockHours, clockMinutes);
-            
-            //Wait for both buttons to be released
-            while(BUTTON_ReadHR() || BUTTON_ReadMIN());
-
-            //Software debounce
             HAL_Delay(150);
-            UserLED_Off();
+
+            if( BUTTON_ReadHR() && BUTTON_ReadMIN() )
+            {
+                switch(Clock_GetMode())
+                {
+                    case ModeSameColor:
+                        Clock_SetMode(ModeRainbowStatic);
+                        periodUpdateClock = LED_UPDATE_SPEED_SLOW;
+                    break;
+
+                    case ModeRainbowStatic:
+                        Clock_SetMode(ModeRainbowDynamic);
+                        periodUpdateClock = LED_UPDATE_SPEED_FAST;
+                    break;
+
+                    case ModeRainbowDynamic:
+                        Clock_SetMode(ModeSameColor);
+                        periodUpdateClock = LED_UPDATE_SPEED_SLOW;
+                    break;
+
+                    default:
+                        Clock_SetMode(ModeSameColor);
+                        periodUpdateClock = LED_UPDATE_SPEED_SLOW;
+                    break;
+                }
+            }
+            else
+            {
+                //Increment hours
+                if(BUTTON_ReadHR())
+                {
+                    clockHours = (clockHours < 23) ? ++clockHours : 0;
+                    RTC_SetTime(clockHours, clockMinutes, 0);
+                }
+                else if(BUTTON_ReadMIN())
+                {
+                    clockMinutes = (clockMinutes < 59) ? ++clockMinutes : 0;
+                    RTC_SetTime(clockHours, clockMinutes, 0);
+                }
+
+                // Update LEDs
+                Clock_Update(clockHours, clockMinutes);
+                
+                //Wait for both buttons to be released
+                while(BUTTON_ReadHR() || BUTTON_ReadMIN());
+
+                //Software debounce
+                UserLED_Off();
+                
+            }
 
         }
 
