@@ -23,7 +23,7 @@ uint8_t clockSeconds                    = 0;
 volatile uint32_t miliseconds           = 0;
 volatile uint32_t updateTime            = 0;
 volatile uint32_t updateLED             = 0;
-volatile uint32_t periodUpdateClock     = LED_UPDATE_SPEED_SLOW;
+volatile uint32_t periodUpdateClock     = LED_UPDATE_SPEED_FAST;
 
 extern RTC_HandleTypeDef hrtc;
 
