@@ -17,7 +17,7 @@ float LED_Brightness                        = DIM_LED_IS_ON;
 
 // Fade in-out helper variables
 volatile ws_led_t colorMinutes_current;
-static uint8_t clockPhase = 59;
+static uint8_t clockPhase = 62;
 static clockMode_t clockMode = ModeRainbowDynamic;
 
 // Color fade states
@@ -107,7 +107,7 @@ void Clock_DrawTime(uint8_t ClockHour, uint8_t ClockMinute)
     colorMinutes_current = Color_Wheel(colorFadeState);
     colorFadeState = (colorFadeState < 60) ? ++colorFadeState : 0;
     
-    clockPhase = (clockPhase > 0) ? --clockPhase : 59;
+    clockPhase = (clockPhase > 0) ? --clockPhase : 62;
 
     //Mark elapsed minutes with newely chosen color
     for (uint8_t i = 0; i < ClockMinute; ++i)
