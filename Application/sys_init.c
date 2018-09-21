@@ -3,13 +3,16 @@
 
 // HAL
 #include "stm32f1xx.h"
+#include "stm32f1xx_hal_rtc.h"
 #include "stm32f1xx_hal_conf.h"
 #include "stm32f1xx_hal_gpio.h"
 #include "stm32f1xx_hal_rcc.h"
 #include "stm32f1xx_hal_tim.h"
 
 // App
+#include "clock_config.h"
 #include "uart.h"
+#include "debug.h"
 
 // Local defines
 #define TIM3_CCR1_Address 0x40000434  // physical memory address of Timer 3 CCR1 register
@@ -48,29 +51,45 @@ void Sys_Init(void)
     USART_Init();
 
     // Output our current MCU config
-  debug("-----\t Living Room Clock \t-----");
-  debug("System Clock: %ldMHz", (HAL_RCC_GetSysClockFreq()/1000000));
-  debug("TIM3 CH1 Prescaler is: %d", __HAL_TIM_GET_ICPRESCALER(&htim3, TIM_CHANNEL_1));
+    debug("-----\t Living Room Clock \t-----");
+    debug("System Clock: %ldMHz", (HAL_RCC_GetSysClockFreq()/1000000));
+    debug("TIM3 CH1 Prescaler is: %d", __HAL_TIM_GET_ICPRESCALER(&htim3, TIM_CHANNEL_1));
 
 
-    // Define HR and MIN buttons
-    GPIO_InitStructure.Pin     = GPIO_PIN_2 | GPIO_PIN_3;
+    // GPIO setup
+    // Hour button
+    GPIO_InitStructure.Pin     = GPIO_HOUR_PIN;
     GPIO_InitStructure.Mode    = GPIO_MODE_INPUT;
     GPIO_InitStructure.Pull    = GPIO_PULLUP;
     GPIO_InitStructure.Speed   = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+    HAL_GPIO_Init(GPIO_HOUR_PORT, &GPIO_InitStructure);
+
+    // Minute button
+    GPIO_InitStructure.Pin     = GPIO_MINUTE_PIN;
+    GPIO_InitStructure.Mode    = GPIO_MODE_INPUT;
+    GPIO_InitStructure.Pull    = GPIO_PULLUP;
+    GPIO_InitStructure.Speed   = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIO_MINUTE_PORT, &GPIO_InitStructure);
 
 
-    GPIO_InitStructure.Pin     = GPIO_PIN_11 | GPIO_PIN_5;
+    // Debug/activity LED
+    GPIO_InitStructure.Pin     = GPIO_DBG_LED_PIN;
     GPIO_InitStructure.Mode    = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStructure.Speed   = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+    HAL_GPIO_Init(GPIO_DBG_LED_PORT, &GPIO_InitStructure);
+
+    // User LED
+    GPIO_InitStructure.Pin     = GPIO_USR_LED_PIN;
+    GPIO_InitStructure.Mode    = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStructure.Speed   = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIO_USR_LED_PORT, &GPIO_InitStructure);
 
 
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIO_DBG_LED_PORT, GPIO_DBG_LED_PIN, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIO_USR_LED_PORT, GPIO_USR_LED_PIN, GPIO_PIN_RESET);
 
-
+    hrtc.Instance               = RTC;
+    HAL_RTC_Init(&hrtc);
     RTC_Init();
 
 }
@@ -88,14 +107,13 @@ static void SystemClock_Config(void)
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_LSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = 16;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL7;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL14;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
@@ -122,10 +140,6 @@ static void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-    /**Enables the Clock Security System 
-    */
-  HAL_RCC_EnableCSS();
-
     /**Configure the Systick interrupt time 
     */
   HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
@@ -142,62 +156,70 @@ static void SystemClock_Config(void)
 
 void RTC_Init(void)
 {
-  // RTC_TimeTypeDef sTime;
-  // RTC_DateTypeDef DateToUpdate;
+    HAL_StatusTypeDef status;
+    RTC_TimeTypeDef  sTime;
+    RTC_DateTypeDef DateToUpdate;
 
-    /**Initialize RTC Only 
-    */
-  hrtc.Instance           = RTC;
-  hrtc.Init.AsynchPrediv  = RTC_AUTO_1_SECOND;
-  hrtc.Init.OutPut        = RTC_OUTPUTSOURCE_ALARM;
-  HAL_RTC_Init(&hrtc);
+    // Initialize RTC
+    hrtc.Instance               = RTC;
+    hrtc.Init.AsynchPrediv      = RTC_AUTO_1_SECOND;
+    hrtc.Init.OutPut            = RTC_OUTPUTSOURCE_NONE;
+    if( (status = HAL_RTC_Init(&hrtc)) )
+    {
+        debug("HAL_RTC_Init ERROR: 0x%02X", status);
+    }
 
-    /**Initialize RTC and set the Time and Date 
-    */
-  if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1) != 0x32F2){
-    // sTime.Hours = 0x0A;
-    // sTime.Minutes = 0x23;
-    // sTime.Seconds = 0x0;
+    // Set clock to 00:00:00 if RTC is booting up for the first time
+    if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1) != 0x32F2){
+        sTime.Hours     = 0;
+        sTime.Minutes   = 0;
+        sTime.Seconds   = 0;
 
-    // HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD);
+        if( (status = HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD)) )
+        {
+            debug("HAL_RTC_SetTime ERROR: 0x%02X", status);
+        }
 
-    // DateToUpdate.WeekDay = RTC_WEEKDAY_MONDAY;
-    // DateToUpdate.Month = RTC_MONTH_JANUARY;
-    // DateToUpdate.Date = 0x1;
-    // DateToUpdate.Year = 0x0;
+        DateToUpdate.WeekDay = RTC_WEEKDAY_MONDAY;
+        DateToUpdate.Month = RTC_MONTH_JANUARY;
+        DateToUpdate.Date = 0x1;
+        DateToUpdate.Year = 0x0;
 
-    // HAL_RTC_SetDate(&hrtc, &DateToUpdate, RTC_FORMAT_BCD);
+        if( (status = HAL_RTC_SetDate(&hrtc, &DateToUpdate, RTC_FORMAT_BCD)) )
+        {
+            debug("HAL_RTC_SetDate ERROR: 0x%02X", status);
+        }
 
-    HAL_RTCEx_BKUPWrite(&hrtc,RTC_BKP_DR1,0x32F2);
-  }
-
+        // Set RTC flag in RTC backup register so we know RTC
+        // has been initalized and is ready to be used.
+        HAL_RTCEx_BKUPWrite(&hrtc,RTC_BKP_DR1,0x32F2);
+    }
 }
+
+
 
 void HAL_RTC_MspInit(RTC_HandleTypeDef* rtcHandle)
 {
 
-  if(rtcHandle->Instance==RTC)
-  {
-
-    HAL_PWR_EnableBkUpAccess();
-    /* Enable BKP CLK enable for backup registers */
-    __HAL_RCC_BKP_CLK_ENABLE();
-    /* RTC clock enable */
-    __HAL_RCC_RTC_ENABLE();
-
-  }
+    if(rtcHandle->Instance==RTC)
+    {
+        HAL_PWR_EnableBkUpAccess();
+        /* Enable BKP CLK enable for backup registers */
+        __HAL_RCC_BKP_CLK_ENABLE();
+        /* RTC clock enable */
+        __HAL_RCC_RTC_ENABLE();
+    }
 }
 
 void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 {
-
-  if(rtcHandle->Instance==RTC)
-  {
+    if(rtcHandle->Instance==RTC)
+    {
 
     /* Peripheral clock disable */
-    __HAL_RCC_RTC_DISABLE();
+        __HAL_RCC_RTC_DISABLE();
 
-  }
+    }
 } 
 
 
@@ -226,11 +248,11 @@ void Timer3_init(void)
     uint16_t PrescalerValue;
     
     __HAL_RCC_GPIOA_CLK_ENABLE();
-    /* GPIOA Configuration: TIM3 Channel 1 as alternate function push-pull */
-    GPIO_InitStructure.Pin = GPIO_PIN_6;
-    GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+    /* GPIO_WS2812_PIN Configuration: TIM3 Channel 1 as alternate function push-pull */
+    GPIO_InitStructure.Pin      = GPIO_WS2812_PIN;
+    GPIO_InitStructure.Mode     = GPIO_MODE_AF_PP;
+    GPIO_InitStructure.Speed    = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIO_WS2812_PORT, &GPIO_InitStructure);
     
     __HAL_RCC_TIM3_CLK_ENABLE();
 
@@ -276,6 +298,9 @@ void Timer3_init(void)
     
     /* TIM3 CC1 DMA Request enable */
     __HAL_DMA_ENABLE(&hdma_tim3_ch1);
+
+    /* SysTick_IRQn interrupt configuration */
+    HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
 }
 
 /*
@@ -284,12 +309,14 @@ void Timer3_init(void)
 
 static void _Error_Handler(char * file, int line)
 {
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  while(1) 
-  {
-  }
-  /* USER CODE END Error_Handler_Debug */ 
+    UNUSED(file);
+    UNUSED(line);
+    /* USER CODE BEGIN Error_Handler_Debug */
+    /* User can add his own implementation to report the HAL error return state */
+    while(1) 
+    {
+    }
+    /* USER CODE END Error_Handler_Debug */ 
 }
 
 #ifdef USE_FULL_ASSERT
@@ -303,10 +330,12 @@ static void _Error_Handler(char * file, int line)
    */
 void assert_failed(uint8_t* file, uint32_t line)
 {
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
+    UNUSED(file);
+    UNUSED(line);
+    /* USER CODE BEGIN 6 */
+    /* User can add his own implementation to report the file name and line number,
     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
+    /* USER CODE END 6 */
 
 }
 

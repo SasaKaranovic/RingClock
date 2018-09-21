@@ -30,7 +30,7 @@ void USART_Init(void)
     __HAL_RCC_USART1_CLK_ENABLE();
 
    /**USART1 GPIO Configuration    
-    PA9     ------> USART1_TX
+    PA9      ------> USART1_TX
     PA10     ------> USART1_RX 
     */
 
@@ -58,24 +58,18 @@ void USART_Init(void)
     huart1.Init.OverSampling    = UART_OVERSAMPLING_16;
     huart1.Init.BaudRate        = 115200;
     halerr = HAL_UART_Init(&huart1);
-    if(halerr !=  HAL_OK) 
-    {
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-        while(1);
-    }
-
-
-
 
 }
 
 
 char u1_putchar(char c)
-{
+{   
+#ifdef DEBUG_BUILD
     while (!(USART1->SR & UART_FLAG_TXE));
             USART1->DR = (c & 0xFF);
 
-    return(c);
+#endif
+    return c;
 }
 
 

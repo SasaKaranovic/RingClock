@@ -3,6 +3,7 @@
 #include "sys_init.h"
 
 
+extern TIM_HandleTypeDef  htim3;
 
 /* Buffer that holds one complete DMA transmission
  * 
@@ -15,7 +16,7 @@
  * This leaves us with a maximum string length of
  * (2^16 bytes per DMA stream - 42 bytes)/24 bytes per LED = 2728 LEDs
  */
-uint16_t LED_BYTE_Buffer[1482];
+uint16_t LED_BYTE_Buffer[1482] = {0};
 
 
 
@@ -95,5 +96,7 @@ void WS2812_send(ws_led_t *color, uint16_t len)
         memaddr++;
     }
 
-    Timer3_DMA_WaitForComplete(LED_BYTE_Buffer, buffersize);
+    // Timer3_DMA_WaitForComplete(LED_BYTE_Buffer, buffersize);
+
+    HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, (uint32_t*)LED_BYTE_Buffer, (uint32_t)buffersize);
 }

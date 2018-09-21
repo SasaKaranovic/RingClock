@@ -9,21 +9,20 @@
 #include "rtc.h"
 
 // RTC config
-RTC_HandleTypeDef hrtc =
-{
-    .Instance = RTC,
-    .Init.AsynchPrediv = RTC_AUTO_1_SECOND,
-    .Init.OutPut = RTC_OUTPUTSOURCE_ALARM
-};
+extern RTC_HandleTypeDef hrtc;
 
 void RTC_SetTime(uint8_t hours, uint8_t minutes, uint8_t seconds)
 {
+    HAL_StatusTypeDef status;
     RTC_TimeTypeDef sTime;
     sTime.Hours     = hours;
     sTime.Minutes   = minutes;
     sTime.Seconds   = seconds;
 
-    HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+    if( (status = HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) ))
+    {
+        debug("HAL_RTC_SetTime ERROR: 0x%02X", status);
+    }
 }
 
 
@@ -46,9 +45,13 @@ void RTC_ReadTime(uint8_t *hours, uint8_t *minutes, uint8_t *seconds)
         return;
     }
 
+    HAL_StatusTypeDef status;
     RTC_TimeTypeDef sTime;
 
-    HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+    if( (status = HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN)) )
+    {
+        debug("HAL_RTC_GetTime ERROR: 0x%02X", status);
+    }
 
     //debug("Read back time: %02d:%02d:%02d", sTime.Hours, sTime.Minutes, sTime.Seconds);
 

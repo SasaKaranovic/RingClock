@@ -25,7 +25,8 @@ STM32_INCLUDES = -IApplication \
 -IDrivers/CMSIS/Device/ST/STM32F1xx/Include \
 -IDrivers/CMSIS/Include
 
-OPTIMIZE       = -O2 -Wall -Wextra -Wunused-parameter
+OPTIMIZE       = -std=gnu99 -O2 -Wall -Wextra -Wunused-parameter -Wno-sequence-point
+# OPTIMIZE       = -std=gnu99 -fno-common -fmessage-length=0 -Wall -fno-exceptions -ffunction-sections -fdata-sections -fomit-frame-pointer -fdump-rtl-expand -Os -fdiagnostics-color -fstack-usage
 
 CFLAGS	= $(MCFLAGS)  $(OPTIMIZE)  $(DEFS) -I. -I./ $(STM32_INCLUDES)  -Wl,-T,STM32F103C8Tx_FLASH.ld
 AFLAGS	= $(MCFLAGS) 
