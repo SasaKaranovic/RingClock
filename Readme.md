@@ -15,7 +15,7 @@ Few things that would help you read time from this clock:
 
 - RED led is hour hand
 - GEEN led is minute hand
-- YELLOW leds are hour markers (12, 1, 2, and etc)
+- YELLOW leds are fixed and they show hour markers (12, 1, 2 and etc)
 - Elapsed minutes will be "filled" with rainbow colors that rotate over time
 
 Now with that, you can see that clock is showing 4:55
