@@ -7,7 +7,8 @@ typedef enum clockMode_t
 	ModeSameColor = 1,
 	ModeRainbowStatic = 2,
 	ModeRainbowDynamic = 3,
-	Mode_LAST = 4
+	ModeSilent = 4,
+	Mode_LAST = 5
 } clockMode_t;
 
 void Clock_Clear(void);

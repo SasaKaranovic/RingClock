@@ -7,10 +7,14 @@
 #define LED_UPDATE_SPEED_SLOW   3000
 #define LED_UPDATE_SPEED_FAST   100
 #define DIMMING_FEATURE_ENABLED         // Comment this line to disable LED time-based dimming
+
 #define DIM_HOUR_TURN_ON        19      // Turn ON dim feature at 19:00
+#define DIM_HOUR_TURN_MAX       22      // This is quiet time. Minimum light
 #define DIM_HOUR_TURN_OFF       8       // Turn OFF dim feature at 08:00
+
 #define DIM_LED_IS_ON           0.15
 #define DIM_LED_IS_DIM          0.07
+#define DIM_LED_IS_MAX          0.01
     
 // GPIO definitions 
 #define GPIO_MINUTE_PIN         GPIO_PIN_3
